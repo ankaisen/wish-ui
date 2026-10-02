@@ -1,13 +1,13 @@
 # Philosophy
 
-Why Wish UI exists and how it thinks about software. For the rules that follow from this, see [principles.md](principles.md).
+Why Wishkit exists and how it thinks about software. For the rules that follow from this, see [principles.md](principles.md).
 
 ## The idea
 
 > **Make your app programmable by its users.**
 > Software you can change by talking to it.
 
-Most AI app builders help people *create* software: a user describes an application, AI builds it, and it gets deployed. Wish UI explores what happens *after* software exists and is being used. A user is already working in an app, notices something they want different, says so, and the app adapts for them.
+Most AI app builders help people *create* software: a user describes an application, AI builds it, and it gets deployed. Wishkit explores what happens *after* software exists and is being used. A user is already working in an app, notices something they want different, says so, and the app adapts for them.
 
 The project is not mainly about helping people build software. It is about making software itself continuously adaptable.
 
@@ -51,17 +51,17 @@ The end user never needs to know about frameworks, files, packages, builds or de
 | In-browser runtimes (Sandpack, WebContainers) | Running changing code | Infrastructure, not a product |
 | AI app builders | Creating software | Generate an app from a prompt |
 | Low-code / no-code | Configuring software | Options the developer predicted |
-| **Wish UI** | **Adapting software while it's used** | **Context + intent → bounded change** |
+| **Wishkit** | **Adapting software while it's used** | **Context + intent → bounded change** |
 
-Low-code makes the developer define both *what* can change and *how*. Wish UI keeps the developer defining *what* (the boundary) and lets the AI handle *how*, so users are not limited to customizations someone anticipated.
+Low-code makes the developer define both *what* can change and *how*. Wishkit keeps the developer defining *what* (the boundary) and lets the AI handle *how*, so users are not limited to customizations someone anticipated.
 
 ## Positioning
 
-Wish UI is **an open-source toolkit for adding end-user programmability to web applications**: an SDK first, shown through two demos (a web app and an Electron app). It is not an AI app builder and not "a sandbox plus an LLM".
+Wishkit is **an open-source toolkit for adding end-user programmability to web applications**: an SDK first, shown through two demos (a web app and an Electron app). It is not an AI app builder and not "a sandbox plus an LLM".
 
 ## Non-goals
 
-Wish UI should not become an IDE, a deployment or hosting platform, a website builder, a generic coding agent, a package manager UI, a Git replacement, or a full low-code platform.
+Wishkit should not become an IDE, a deployment or hosting platform, a website builder, a generic coding agent, a package manager UI, a Git replacement, or a full low-code platform.
 
 ## The long-term bet
 
