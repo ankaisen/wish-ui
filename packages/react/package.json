@@ -2,7 +2,12 @@
   "name": "@wishkit/react",
   "version": "0.0.0",
   "private": true,
-  "description": "React bindings for Wish UI.",
+  "description": "React bindings for Wishkit.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankaisen/wishkit.git",
+    "directory": "packages/react"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

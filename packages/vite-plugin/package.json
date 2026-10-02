@@ -2,7 +2,12 @@
   "name": "@wishkit/vite-plugin",
   "version": "0.0.0",
   "private": true,
-  "description": "Vite plugin that exposes the programmable folder to the Wish UI runtime.",
+  "description": "Vite plugin that exposes the programmable folder to the Wishkit runtime.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankaisen/wishkit.git",
+    "directory": "packages/vite-plugin"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
