@@ -1,6 +1,6 @@
 # Principles
 
-The rules that keep Wish UI honest to its [philosophy](philosophy.md). Design and code changes should follow them; changing one is a deliberate decision, not a side effect.
+The rules that keep Wishkit honest to its [philosophy](philosophy.md). Design and code changes should follow them; changing one is a deliberate decision, not a side effect.
 
 ## 1. Modification is contextual
 

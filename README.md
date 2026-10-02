@@ -1,4 +1,4 @@
-# Wish UI
+# Wishkit
 
 An open-source SDK that lets the end users of a web or Electron app reshape it by making wishes. A user selects part of the app, types something like "add priorities" or "hide the top bar", and the running app changes right away. Every change can be undone.
 

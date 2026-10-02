@@ -4,7 +4,7 @@ Guidance for AI coding agents (and humans) working in this repository.
 
 ## What this is
 
-Wish UI is an open-source SDK that lets the end users of a React app, on the web or in Electron, reshape it by making wishes in natural language. The developer marks one folder as programmable; an LLM rewrites files in that folder, and the running app updates live. See `README.md`.
+Wishkit is an open-source SDK that lets the end users of a React app, on the web or in Electron, reshape it by making wishes in natural language. The developer marks one folder as programmable; an LLM rewrites files in that folder, and the running app updates live. See `README.md`.
 
 ## Philosophy and principles
 
