@@ -1,12 +1,12 @@
 {
-  "name": "@wishkit/core",
+  "name": "@wishkit/llm",
   "version": "0.0.0",
   "private": true,
-  "description": "Runtime that compiles and swaps a user's overlay of programmable files.",
+  "description": "Turns wishes into changes to the programmable folder, using Claude.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ankaisen/wishkit.git",
-    "directory": "packages/core"
+    "directory": "packages/llm"
   },
   "type": "module",
   "exports": {
@@ -17,7 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "esbuild-wasm": "^0.28.2"
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@wishkit/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

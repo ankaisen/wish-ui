@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import programmable from "@wish-ui/vite-plugin";
+import programmable from "@wishkit/vite-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({

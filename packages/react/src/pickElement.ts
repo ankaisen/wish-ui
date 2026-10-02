@@ -1,12 +1,6 @@
-/** What the user pointed at: the element and the source line that created it. */
-export type Selection = {
-  file: string;
-  line: number;
-  /** The element's tag, e.g. "h2". */
-  tag: string;
-  /** The element's visible text, shortened. */
-  text: string;
-};
+import type { Selection } from "@wishkit/core";
+
+export type { Selection };
 
 const ROOT_SELECTOR = "[data-wish-root]";
 

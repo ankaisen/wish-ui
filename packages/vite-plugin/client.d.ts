@@ -1,5 +1,5 @@
-// Add `"types": ["@wish-ui/vite-plugin/client"]` to your tsconfig to type the virtual module.
-declare module "virtual:wish-ui/programmable" {
+// Add `"types": ["@wishkit/vite-plugin/client"]` to your tsconfig to type the virtual module.
+declare module "virtual:wishkit/programmable" {
   const files: {
     /** The programmable root, relative to the project root. */
     root: string;

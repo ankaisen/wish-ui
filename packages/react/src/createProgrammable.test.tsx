@@ -1,5 +1,5 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
-import { createEsbuildCompiler } from "@wish-ui/core";
+import { createEsbuildCompiler } from "@wishkit/core";
 import { afterEach, expect, it } from "vitest";
 import { createProgrammable } from "./createProgrammable";
 

@@ -138,3 +138,34 @@ describe("prepare", () => {
     expect(runtime.getSnapshot().version).toBe(1);
   });
 });
+
+describe("tryApply", () => {
+  it("keeps a change that renders", async () => {
+    const runtime = createRuntime();
+    const applying = runtime.tryApply({ "Label.tsx": "export function Label() { return <i>ok</i>; }" });
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    runtime.reportRender(runtime.getSnapshot().version);
+    expect(await applying).toEqual({ ok: true });
+    expect(render(runtime).type).toBe("i");
+  });
+
+  it("brings back the previous version when rendering throws", async () => {
+    const runtime = createRuntime();
+    const applying = runtime.tryApply({ "Label.tsx": "export function Label() { return <i>bad</i>; }" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    runtime.reportRender(runtime.getSnapshot().version, new Error("x is undefined"));
+    expect(await applying).toEqual({ ok: false, errors: ["Error while rendering: x is undefined"] });
+    expect((runtime.getSnapshot().entry as () => string)()).toBe("bundled");
+    expect(runtime.getSnapshot().overlay).toEqual({});
+  });
+
+  it("keeps the change when nothing reports a render", async () => {
+    const runtime = createRuntime();
+    expect(await runtime.tryApply({}, { renderTimeoutMs: 10 })).toEqual({ ok: true });
+  });
+
+  it("lists approved packages without the JSX runtimes", () => {
+    expect(createRuntime().listPackages()).toEqual([]);
+  });
+});
