@@ -8,6 +8,7 @@ import {
   parseWishes,
   serializeWishes,
   setEnabled,
+  textWishStore,
   type SavedWish,
   type WishStore,
 } from "./wishes";
@@ -173,5 +174,27 @@ describe("wish list", () => {
     });
     await list.restore();
     expect(applied).toEqual([]);
+  });
+});
+
+describe("text wish store", () => {
+  it("moves text it can't read aside instead of saving over it", async () => {
+    let text: string | null = "{ not wishes";
+    const kept: string[] = [];
+    const store = textWishStore({
+      read: async () => text,
+      write: async (next) => {
+        text = next;
+      },
+      keepUnreadable: async (unreadable) => {
+        kept.push(unreadable);
+      },
+    });
+
+    expect(await store.load()).toEqual([]);
+    expect(kept).toEqual(["{ not wishes"]);
+    const wishes = make([], "badges", { "List.tsx": "list + badges" });
+    await store.save(wishes);
+    expect(await store.load()).toEqual(wishes);
   });
 });

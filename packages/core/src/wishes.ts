@@ -340,3 +340,27 @@ export function memoryWishStore(initial: SavedWish[] = []): WishStore {
     },
   };
 }
+
+/** Somewhere to keep the wishes as text: localStorage, a file, a database row. */
+export type TextStorage = {
+  read(): Promise<string | null>;
+  write(text: string): Promise<void>;
+  /** Moves text this version can't read out of the way, so saving over it loses nothing. */
+  keepUnreadable(text: string): Promise<void>;
+  subscribe?(listener: () => void): () => void;
+};
+
+/** A WishStore over plain text storage, in the format parseWishes() reads. */
+export function textWishStore(storage: TextStorage): WishStore {
+  return {
+    async load() {
+      const text = await storage.read();
+      const wishes = parseWishes(text);
+      if (wishes) return wishes;
+      await storage.keepUnreadable(text!);
+      return [];
+    },
+    save: (wishes) => storage.write(serializeWishes(wishes)),
+    subscribe: storage.subscribe && ((listener) => storage.subscribe!(listener)),
+  };
+}

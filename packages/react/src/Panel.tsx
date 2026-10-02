@@ -231,7 +231,7 @@ export function Panel({ runtime, wishes, wisher, apiKey }: PanelProps) {
 
       {!hasKey && apiKey ? (
         <form style={{ display: "flex", flexDirection: "column", gap: 8 }} onSubmit={saveKey}>
-          <p style={styles.hint}>Enter your Claude API key. It stays in this browser and is sent only to the Claude API.</p>
+          <p style={styles.hint}>Enter your Claude API key. {apiKey.description}</p>
           <input
             aria-label="API key"
             type="password"

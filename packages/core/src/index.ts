@@ -23,6 +23,8 @@ export {
   removeWish,
   serializeWishes,
   setEnabled,
+  textWishStore,
+  type TextStorage,
   type SavedWish,
   type WishList,
   type WishListChange,
