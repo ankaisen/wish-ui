@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createEsbuildCompiler, type Wisher } from "@wishkit/core";
-import { afterEach, expect, it } from "vitest";
+import { createEsbuildCompiler, hashSource, memoryWishStore, type SavedWish, type Wisher, type WishStore } from "@wishkit/core";
+import { afterEach, expect, it, vi } from "vitest";
 import type { ApiKeyStore } from "./apiKey";
 import { createProgrammable } from "./createProgrammable";
 
@@ -8,12 +8,13 @@ afterEach(cleanup);
 
 const source = "export default function App() { return <p>plain</p>; }";
 
-function setup(wisher: Wisher, apiKey?: ApiKeyStore) {
+function setup(wisher: Wisher, apiKey?: ApiKeyStore, store: WishStore = memoryWishStore()) {
   const wish = createProgrammable({
     files: { sources: { "index.tsx": source }, modules: { "index.tsx": { default: () => <p>plain</p> } } },
     compiler: createEsbuildCompiler(),
     wisher,
     apiKey,
+    store,
   });
   render(
     <>
@@ -39,18 +40,66 @@ async function wishFor(text: string) {
   });
 }
 
-it("applies a wish, shows its summary, and undoes it", async () => {
-  setup(boldWisher);
+it("applies a wish, saves it, and undoes it", async () => {
+  const store = memoryWishStore();
+  setup(boldWisher, undefined, store);
   await wishFor("make it bold");
 
-  await waitFor(() => expect(screen.getByRole("status").textContent).toBe("✓ Made the text bold"), { timeout: 4000 });
+  await waitFor(() => expect(screen.getByRole("status").textContent).toBe("✓ Made the text bold Undo"), { timeout: 4000 });
   expect(screen.getByText("bold").tagName).toBe("B");
+  expect(await store.load()).toMatchObject([{ text: "make it bold", summary: "Made the text bold", enabled: true }]);
+  expect(screen.getByLabelText("Turn off: make it bold")).toBeTruthy();
 
   await act(async () => {
-    fireEvent.click(screen.getByText("Undo last change"));
+    fireEvent.click(screen.getByText("Undo"));
   });
-  await waitFor(() => expect(screen.getByText("plain")).toBeTruthy());
-  expect(screen.queryByText("Undo last change")).toBeNull();
+  await waitFor(() => expect(screen.getByText("plain")).toBeTruthy(), { timeout: 4000 });
+  expect(await store.load()).toMatchObject([{ text: "make it bold", enabled: false }]);
+  expect(screen.getByLabelText("Turn on: make it bold")).toBeTruthy();
+});
+
+function saved(files: Record<string, string>, base: Record<string, string>): SavedWish {
+  return { id: "w1", text: "make it bold", summary: "Made the text bold", selection: null, createdAt: 0, files, base, dependsOn: [], enabled: true };
+}
+
+it("brings back saved wishes when the app loads", async () => {
+  const files = { "index.tsx": "export default function App() { return <p><b>bold</b></p>; }" };
+  setup(boldWisher, undefined, memoryWishStore([saved(files, { "index.tsx": hashSource(source) })]));
+  await waitFor(() => expect(screen.getByText("bold").tagName).toBe("B"), { timeout: 4000 });
+});
+
+it("pauses a wish made against an older app and makes it again", async () => {
+  const files = { "index.tsx": "export default function App() { return <p><i>old</i></p>; }" };
+  const store = memoryWishStore([saved(files, { "index.tsx": hashSource("an older index.tsx") })]);
+  setup(boldWisher, undefined, store);
+
+  await waitFor(() => expect(screen.getByText("The app changed since this wish, so it is paused.")).toBeTruthy());
+  expect(screen.getByText("plain")).toBeTruthy();
+
+  await act(async () => {
+    fireEvent.click(screen.getByText("Make it again"));
+  });
+  await waitFor(() => expect(screen.getByText("bold").tagName).toBe("B"), { timeout: 4000 });
+  const wishes = await store.load();
+  expect(wishes).toMatchObject([{ text: "make it bold", enabled: true, base: { "index.tsx": hashSource(source) } }]);
+  expect(wishes[0]!.id).not.toBe("w1");
+  expect(screen.queryByText("Make it again")).toBeNull();
+});
+
+it("removes a wish after asking", async () => {
+  const files = { "index.tsx": "export default function App() { return <p><b>bold</b></p>; }" };
+  const store = memoryWishStore([saved(files, { "index.tsx": hashSource(source) })]);
+  setup(boldWisher, undefined, store);
+  await waitFor(() => expect(screen.getByText("bold")).toBeTruthy(), { timeout: 4000 });
+
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+  await act(async () => {
+    fireEvent.click(screen.getByLabelText("Remove: make it bold"));
+  });
+  expect(confirm).toHaveBeenCalledWith("Remove “make it bold”? This can't be undone.");
+  await waitFor(() => expect(screen.getByText("plain")).toBeTruthy(), { timeout: 4000 });
+  expect(await store.load()).toEqual([]);
+  confirm.mockRestore();
 });
 
 it("explains a declined wish", async () => {

@@ -1,10 +1,20 @@
-import type { Overlay, ProgrammableRuntime, Selection, Wisher, WishOutcome } from "@wishkit/core";
-import { useRef, useState, type CSSProperties, type FormEvent } from "react";
+import {
+  dependentsOf,
+  type ProgrammableRuntime,
+  type SavedWish,
+  type Selection,
+  type Wisher,
+  type WishList,
+  type WishOutcome,
+} from "@wishkit/core";
+import { useState, useSyncExternalStore, type CSSProperties, type FormEvent } from "react";
 import type { ApiKeyStore } from "./apiKey";
 import { pickElement } from "./pickElement";
 
 export type PanelProps = {
   runtime: ProgrammableRuntime;
+  /** The user's saved wishes. */
+  wishes: WishList;
   /** Turns wishes into changes. Without one, the panel only selects. */
   wisher?: Wisher;
   /** When given, the panel asks for an API key before the first wish. */
@@ -77,20 +87,30 @@ const styles = {
   hint: { margin: 0, color: "#57606a", fontSize: 13 },
   applied: { margin: 0, padding: 8, borderRadius: 6, background: "#dafbe1", fontSize: 13 },
   problem: { margin: 0, padding: 8, borderRadius: 6, background: "#fff8c5", fontSize: 13 },
+  list: { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" },
+  item: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 },
+  itemText: { flex: 1, display: "flex", flexDirection: "column", gap: 4 },
+  small: { padding: "2px 8px", border: "1px solid #d0d7de", borderRadius: 6, background: "#f6f8fa", color: "inherit", font: "inherit", fontSize: 12, cursor: "pointer", alignSelf: "flex-start" },
 } satisfies Record<string, CSSProperties>;
 
-/** The floating wish panel: select part of the app, describe a change, see it happen. */
-export function Panel({ runtime, wisher, apiKey }: PanelProps) {
+function quoteList(wishes: SavedWish[]): string {
+  return wishes.map((wish) => `“${wish.text}”`).join(", ");
+}
+
+/** The floating wish panel: select part of the app, describe a change, see it happen, turn it off again. */
+export function Panel({ runtime, wishes, wisher, apiKey }: PanelProps) {
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState<"preparing" | "picking" | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [text, setText] = useState("");
   const [progress, setProgress] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<WishOutcome | null>(null);
+  /** The wish the last outcome is about, so it can be undone from there. */
+  const [madeId, setMadeId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const list = useSyncExternalStore(wishes.subscribe, wishes.getSnapshot);
   const [hasKey, setHasKey] = useState(() => !apiKey || Boolean(apiKey.get()));
   const [keyDraft, setKeyDraft] = useState("");
-  const history = useRef<Overlay[]>([]);
-  const [canUndo, setCanUndo] = useState(false);
 
   async function select() {
     setPicking("preparing");
@@ -111,35 +131,77 @@ export function Panel({ runtime, wisher, apiKey }: PanelProps) {
     }
   }
 
-  async function makeWish(event: FormEvent) {
-    event.preventDefault();
-    if (!wisher || !text.trim() || progress) return;
-    const before = runtime.getSnapshot().overlay;
+  /** Runs a wish through the wisher and saves it once its change is live. */
+  async function run(wishText: string, wishSelection: Selection | null, save: (outcome: Extract<WishOutcome, { status: "applied" }>) => Promise<SavedWish>) {
+    if (!wisher || progress) return false;
     setOutcome(null);
+    setNotice(null);
+    setMadeId(null);
     setProgress("Starting");
     try {
       await runtime.prepare();
-      const result = await wisher({ text: text.trim(), selection, workspace: runtime, onProgress: setProgress });
+      const result = await wisher({ text: wishText, selection: wishSelection, workspace: runtime, onProgress: setProgress });
+      if (result.status === "applied") setMadeId((await save(result)).id);
       setOutcome(result);
-      if (result.status === "applied") {
-        history.current.push(before);
-        setCanUndo(true);
-        setText("");
-        setSelection(null);
-      }
+      return result.status === "applied";
     } catch (error) {
       setOutcome({ status: "failed", error: error instanceof Error ? error.message : String(error) });
+      return false;
     } finally {
       setProgress(null);
     }
   }
 
-  async function undo() {
-    const previous = history.current.pop();
-    setCanUndo(history.current.length > 0);
-    if (previous === undefined) return;
-    const result = await runtime.tryApply(previous);
-    setOutcome(result.ok ? null : { status: "failed", error: result.errors.join("; ") });
+  async function makeWish(event: FormEvent) {
+    event.preventDefault();
+    const wishText = text.trim();
+    if (!wishText) return;
+    const applied = await run(wishText, selection, ({ summary, files }) =>
+      wishes.record({ text: wishText, summary, selection, files }),
+    );
+    if (applied) {
+      setText("");
+      setSelection(null);
+    }
+  }
+
+  /** Makes a wish again against the app as it is now, replacing its old version. */
+  function remake(wish: SavedWish) {
+    return run(wish.text, null, ({ summary, files }) => wishes.remake(wish.id, { summary, files }));
+  }
+
+  async function toggle(wish: SavedWish, enabled: boolean) {
+    setOutcome(null);
+    setNotice(null);
+    const result = await wishes.setEnabled(wish.id, enabled);
+    if (!result.ok) {
+      setOutcome({ status: "failed", error: result.error });
+    } else if (result.changed.length) {
+      const turnedOn = result.changed.filter((item) => !item.enabled);
+      const turnedOff = result.changed.filter((item) => item.enabled);
+      setNotice(
+        [
+          turnedOn.length ? `Also turned on ${quoteList(turnedOn)}, which it builds on.` : "",
+          turnedOff.length
+            ? `Also turned off ${quoteList(turnedOff)}, which ${enabled ? "changed the same part" : "built on it"}.`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+    }
+  }
+
+  async function remove(wish: SavedWish) {
+    const dependents = dependentsOf(list.wishes, wish.id);
+    const question = dependents.length
+      ? `Remove “${wish.text}” and the wishes built on it (${quoteList(dependents)})? This can't be undone.`
+      : `Remove “${wish.text}”? This can't be undone.`;
+    if (!window.confirm(question)) return;
+    setOutcome(null);
+    setNotice(null);
+    const result = await wishes.remove(wish.id);
+    if (!result.ok) setOutcome({ status: "failed", error: result.error });
   }
 
   function saveKey(event: FormEvent) {
@@ -169,7 +231,7 @@ export function Panel({ runtime, wisher, apiKey }: PanelProps) {
 
       {!hasKey && apiKey ? (
         <form style={{ display: "flex", flexDirection: "column", gap: 8 }} onSubmit={saveKey}>
-          <p style={styles.hint}>Enter your Claude API key. It stays in this browser and is sent only to the Claude API.</p>
+          <p style={styles.hint}>Enter your Claude API key. {apiKey.description}</p>
           <input
             aria-label="API key"
             type="password"
@@ -194,11 +256,6 @@ export function Panel({ runtime, wisher, apiKey }: PanelProps) {
                   ? "Getting ready…"
                   : "Select part of the app"}
             </button>
-            {canUndo && (
-              <button type="button" style={styles.button} disabled={Boolean(progress)} onClick={undo}>
-                Undo last change
-              </button>
-            )}
           </div>
           {selection ? (
             <p style={styles.selection}>
@@ -243,9 +300,63 @@ export function Panel({ runtime, wisher, apiKey }: PanelProps) {
               </div>
             </form>
           )}
-          {outcome?.status === "applied" && <p role="status" style={styles.applied}>✓ {outcome.summary}</p>}
+          {outcome?.status === "applied" && (
+            <p role="status" style={styles.applied}>
+              ✓ {outcome.summary}{" "}
+              {madeId && list.live.has(madeId) && (
+                <button type="button" style={styles.small} onClick={() => toggle(list.wishes.find((wish) => wish.id === madeId)!, false)}>
+                  Undo
+                </button>
+              )}
+            </p>
+          )}
           {outcome?.status === "declined" && <p role="status" style={styles.problem}>Can't do that here: {outcome.reason}</p>}
           {outcome?.status === "failed" && <p role="status" style={styles.problem}>That didn't work: {outcome.error}</p>}
+          {notice && <p role="status" style={styles.hint}>{notice}</p>}
+          {list.error && <p style={styles.problem}>Your saved wishes couldn't be turned on: {list.error}</p>}
+          {list.wishes.length > 0 && (
+            <section aria-label="Your wishes" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <h3 style={{ ...styles.title, fontSize: 13 }}>Your wishes</h3>
+              <ul style={styles.list}>
+                {[...list.wishes].reverse().map((wish) => {
+                  const needsRemake = wish.enabled && !list.live.has(wish.id);
+                  return (
+                    <li key={wish.id} style={styles.item}>
+                      <input
+                        type="checkbox"
+                        aria-label={`${wish.enabled ? "Turn off" : "Turn on"}: ${wish.text}`}
+                        checked={wish.enabled}
+                        disabled={Boolean(progress)}
+                        onChange={(event) => toggle(wish, event.target.checked)}
+                      />
+                      <span style={styles.itemText} title={wish.summary}>
+                        {wish.text}
+                        {needsRemake && (
+                          <>
+                            <span style={styles.hint}>The app changed since this wish, so it is paused.</span>
+                            {wisher && (
+                              <button type="button" style={styles.small} disabled={Boolean(progress)} onClick={() => remake(wish)}>
+                                Make it again
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Remove: ${wish.text}`}
+                        style={styles.small}
+                        disabled={Boolean(progress)}
+                        onClick={() => remove(wish)}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </>
       )}
     </section>

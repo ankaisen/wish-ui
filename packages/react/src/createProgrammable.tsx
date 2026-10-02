@@ -1,10 +1,12 @@
 import {
   createEsbuildCompiler,
   createProgrammableRuntime,
+  createWishList,
   type Compiler,
   type ProgrammableFiles,
   type ProgrammableRuntime,
   type Wisher,
+  type WishStore,
 } from "@wishkit/core";
 import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 import * as React from "react";
@@ -12,6 +14,7 @@ import { Component, useEffect, useSyncExternalStore, type ComponentType, type Re
 import * as jsxRuntime from "react/jsx-runtime";
 import type { ApiKeyStore } from "./apiKey";
 import { Panel as WishPanel } from "./Panel";
+import { localWishStore } from "./wishStore";
 
 export type ProgrammableOptions = {
   /** The programmable folder, usually `import files from "virtual:wishkit/programmable"`. */
@@ -27,6 +30,8 @@ export type ProgrammableOptions = {
   wisher?: Wisher;
   /** When given, the panel asks the user for an API key and keeps it here. */
   apiKey?: ApiKeyStore;
+  /** Where the user's wishes are kept. Defaults to this browser's localStorage. */
+  store?: WishStore;
 };
 
 type BoundaryProps = { children: ReactNode; onError?: (error: Error) => void };
@@ -59,6 +64,14 @@ export function createProgrammable(options: ProgrammableOptions) {
     compiler: options.compiler ?? createEsbuildCompiler({ wasmURL }),
   });
 
+  const wishes = createWishList({
+    store: options.store ?? localWishStore(),
+    sources: options.files.sources,
+    apply: (overlay) => runtime.tryApply(overlay),
+    current: () => runtime.getSnapshot().overlay,
+  });
+  let restored: Promise<unknown> | undefined;
+
   /** Tells the runtime a version rendered, so tryApply() can keep it. */
   function Rendered({ version }: { version: number }) {
     useEffect(() => runtime.reportRender(version), [version]);
@@ -69,6 +82,10 @@ export function createProgrammable(options: ProgrammableOptions) {
   function Root(props: Record<string, unknown>) {
     const snapshot = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot);
     const Entry = snapshot.entry as ComponentType<Record<string, unknown>>;
+    // Brings back the user's saved wishes once something is mounted to render them.
+    useEffect(() => {
+      restored ??= wishes.restore();
+    }, []);
     return (
       <div data-wish-root="" style={{ display: "contents" }}>
         <RenderBoundary key={snapshot.version} onError={(error) => runtime.reportRender(snapshot.version, error)}>
@@ -81,8 +98,8 @@ export function createProgrammable(options: ProgrammableOptions) {
 
   /** The floating panel where users select part of the app and make wishes. */
   function Panel() {
-    return <WishPanel runtime={runtime} wisher={options.wisher} apiKey={options.apiKey} />;
+    return <WishPanel runtime={runtime} wishes={wishes} wisher={options.wisher} apiKey={options.apiKey} />;
   }
 
-  return { runtime, Root, Panel };
+  return { runtime, wishes, Root, Panel };
 }

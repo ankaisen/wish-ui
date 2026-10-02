@@ -6,7 +6,7 @@ The developer decides what can change: one folder of the app is marked programma
 
 ## Status
 
-Early work. In the web demo you can select part of the app, make a wish, watch Claude change the programmable folder live, and undo it. Wishes are not saved across reloads yet, and there is no Electron demo yet.
+Early work. In the web demo you can select part of the app, make a wish, and watch Claude change the programmable folder live. Wishes are saved in the browser and come back on reload. Each one can be turned off and on again, and a wish made before the app itself changed is paused until you make it again. There is no Electron demo yet.
 
 ## Using it
 
@@ -38,6 +38,8 @@ export const wish = createProgrammable({
 // The floating "Make a wish" button.
 <wish.Panel />
 ```
+
+Each user's wishes are kept with the wish text as the source of truth and the changed files as a cache. They live in localStorage by default; pass `store` to keep them elsewhere. Turning a wish off also turns off the wishes built on it.
 
 In the web demo each user enters their own Claude API key. It is kept in the browser's local storage and sent only to the Claude API. An app with its own backend can pass a client that goes through that backend instead.
 
