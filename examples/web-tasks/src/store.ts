@@ -6,6 +6,14 @@ export type Task = {
   done: boolean;
 };
 
+export type TaskStorage = {
+  /** Returns the persisted tasks, or null when nothing valid is stored. */
+  load(): Task[] | null;
+  save(tasks: Task[]): void;
+  /** Calls back when another tab or window changes the stored tasks. */
+  subscribe?(onChange: () => void): () => void;
+};
+
 const STORAGE_KEY = "wish-ui.web-tasks.tasks";
 
 const SEED: Task[] = [
@@ -14,31 +22,61 @@ const SEED: Task[] = [
   { id: "3", title: "Read paper", done: false },
 ];
 
-function load(): Task[] {
+function isTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null) return false;
+  const task = value as Record<string, unknown>;
+  return typeof task.id === "string" && typeof task.title === "string" && typeof task.done === "boolean";
+}
+
+export function parseTasks(raw: string | null): Task[] | null {
+  if (raw === null) return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Task[]) : SEED;
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value) && value.every(isTask) ? value : null;
   } catch {
-    return SEED;
+    return null;
   }
 }
 
-function save(tasks: Task[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  } catch {
-    // Storage can be unavailable (private mode, quota); the app keeps working in memory.
-  }
-}
+export const localStorageTasks: TaskStorage = {
+  load() {
+    try {
+      return parseTasks(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return null;
+    }
+  },
+  save(tasks) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch {
+      // Storage can be unavailable (private mode, quota); the app keeps working in memory.
+    }
+  },
+  subscribe(onChange) {
+    const listener = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) onChange();
+    };
+    window.addEventListener("storage", listener);
+    return () => window.removeEventListener("storage", listener);
+  },
+};
 
-export function createTaskStore(initial: Task[] = load(), persist = save) {
-  let tasks = initial;
+export function createTaskStore(storage: TaskStorage = localStorageTasks, seed: Task[] = SEED) {
+  let tasks = storage.load() ?? seed;
   const listeners = new Set<() => void>();
+  const notify = () => listeners.forEach((listener) => listener());
 
-  function set(next: Task[]) {
-    tasks = next;
-    persist(tasks);
-    listeners.forEach((listener) => listener());
+  storage.subscribe?.(() => {
+    tasks = storage.load() ?? tasks;
+    notify();
+  });
+
+  // Apply each change to the latest persisted tasks, so a stale tab never overwrites newer ones.
+  function update(change: (current: Task[]) => Task[]) {
+    tasks = change(storage.load() ?? tasks);
+    storage.save(tasks);
+    notify();
   }
 
   return {
@@ -50,13 +88,13 @@ export function createTaskStore(initial: Task[] = load(), persist = save) {
     add(title: string) {
       const trimmed = title.trim();
       if (!trimmed) return;
-      set([...tasks, { id: crypto.randomUUID(), title: trimmed, done: false }]);
+      update((current) => [...current, { id: crypto.randomUUID(), title: trimmed, done: false }]);
     },
     toggle(id: string) {
-      set(tasks.map((task) => (task.id === id ? { ...task, done: !task.done } : task)));
+      update((current) => current.map((task) => (task.id === id ? { ...task, done: !task.done } : task)));
     },
     remove(id: string) {
-      set(tasks.filter((task) => task.id !== id));
+      update((current) => current.filter((task) => task.id !== id));
     },
   };
 }

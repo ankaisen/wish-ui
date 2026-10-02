@@ -17,7 +17,7 @@ Early work. The repository currently holds the web demo, a small task dashboard,
 
 ## Running the demo
 
-Requires Node 22 or later and pnpm 10.
+Requires Node 22.22.2+, 24.15+ or 26+, and pnpm 10.
 
 ```sh
 pnpm install

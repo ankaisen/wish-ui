@@ -22,7 +22,7 @@ Wish UI is an open-source SDK that lets the end users of a React app, on the web
 
 ## Commands
 
-Requires Node 22+ and pnpm 10. Run from the repository root:
+Requires Node 22.22.2+, 24.15+ or 26+, and pnpm 10. Run from the repository root:
 
 ```sh
 pnpm install
