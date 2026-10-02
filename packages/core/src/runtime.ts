@@ -145,6 +145,40 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     return { ok: true };
   }
 
+  let renderWaiter: { version: number; settle: (error: Error | null) => void } | undefined;
+
+  /** Called by the view once a version has rendered, or failed to. */
+  function reportRender(version: number, error: Error | null = null) {
+    if (renderWaiter?.version !== version) return;
+    renderWaiter.settle(error);
+    renderWaiter = undefined;
+  }
+
+  /**
+   * Like apply(), but also waits for the new version to render. If rendering throws, the
+   * previous version comes back and the error is returned. Without a mounted view it
+   * gives up waiting after `renderTimeoutMs` and keeps the change.
+   */
+  async function tryApply(overlay: Overlay, { renderTimeoutMs = 2000 } = {}): Promise<BuildResult> {
+    const previous = snapshot;
+    const rendered = new Promise<Error | null>((settle) => {
+      renderWaiter = { version: previous.version + 1, settle };
+    });
+    const result = await apply(overlay);
+    if (!result.ok) {
+      renderWaiter = undefined;
+      return result;
+    }
+    const error = await Promise.race([
+      rendered,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), renderTimeoutMs)),
+    ]);
+    if (!error) return { ok: true };
+    snapshot = { ...previous, version: snapshot.version + 1 };
+    listeners.forEach((listener) => listener());
+    return { ok: false, errors: [`Error while rendering: ${error.message}`] };
+  }
+
   let prepared: Promise<BuildResult> | undefined;
 
   return {
@@ -169,7 +203,12 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     readFile: (path: string): string | undefined => snapshot.overlay[path] ?? files.sources[path],
     listFiles: (): string[] => Object.keys({ ...files.sources, ...snapshot.overlay }).sort(),
     isLocked: (path: string) => locked.has(path),
+    /** Package specifiers programmable code may import. */
+    listPackages: (): string[] =>
+      Object.keys(options.packages).filter((name) => !name.startsWith("react/jsx-")).sort(),
     apply,
+    tryApply,
+    reportRender,
   };
 }
 

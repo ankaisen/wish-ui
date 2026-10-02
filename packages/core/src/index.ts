@@ -8,3 +8,4 @@ export {
   type ProgrammableRuntime,
   type RuntimeOptions,
 } from "./runtime";
+export type { Selection, Wisher, WishOutcome, WishRequest, Workspace } from "./wish";
