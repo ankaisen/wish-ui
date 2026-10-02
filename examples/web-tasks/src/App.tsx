@@ -1,5 +1,5 @@
-import { TaskList } from "./programmable/TaskList";
 import { useTaskList } from "./store";
+import { wish } from "./wish";
 
 export function App() {
   const all = useTaskList();
@@ -16,7 +16,7 @@ export function App() {
         </p>
       </aside>
       <main className="content">
-        <TaskList />
+        <wish.Root />
       </main>
     </div>
   );

@@ -1,26 +1,29 @@
 {
-  "name": "web-tasks",
+  "name": "@wish-ui/react",
+  "version": "0.0.0",
   "private": true,
+  "description": "React bindings for Wish UI.",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
     "typecheck": "tsc -p .",
     "test": "vitest run"
   },
   "dependencies": {
-    "@wish-ui/react": "workspace:*",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "@wish-ui/core": "workspace:*",
+    "esbuild-wasm": "^0.28.2"
+  },
+  "peerDependencies": {
+    "react": ">=19"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "@wish-ui/vite-plugin": "workspace:*",
     "jsdom": "^30.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
