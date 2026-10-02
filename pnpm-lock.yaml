@@ -10,10 +10,10 @@ importers:
 
   examples/web-tasks:
     dependencies:
-      '@wish-ui/llm':
+      '@wishkit/llm':
         specifier: workspace:*
         version: link:../../packages/llm
-      '@wish-ui/react':
+      '@wishkit/react':
         specifier: workspace:*
         version: link:../../packages/react
       react:
@@ -35,7 +35,7 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.2)
-      '@wish-ui/vite-plugin':
+      '@wishkit/vite-plugin':
         specifier: workspace:*
         version: link:../../packages/vite-plugin
       jsdom:
@@ -69,7 +69,7 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.131.0
         version: 0.131.0
-      '@wish-ui/core':
+      '@wishkit/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -82,7 +82,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@wish-ui/core':
+      '@wishkit/core':
         specifier: workspace:*
         version: link:../core
       esbuild-wasm:

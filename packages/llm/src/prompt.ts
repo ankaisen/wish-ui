@@ -1,4 +1,4 @@
-import type { Selection, Workspace } from "@wish-ui/core";
+import type { Selection, Workspace } from "@wishkit/core";
 
 // Above this, file contents go in on request (read_file) instead of up front.
 const INLINE_LIMIT = 60_000;

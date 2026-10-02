@@ -5,7 +5,7 @@ export type ApiKeyStore = {
 };
 
 /** Keeps the key in this browser's localStorage, never sent anywhere but the model provider. */
-export function localApiKeyStore(storageKey = "wish-ui.api-key"): ApiKeyStore {
+export function localApiKeyStore(storageKey = "wishkit.api-key"): ApiKeyStore {
   return {
     get() {
       try {

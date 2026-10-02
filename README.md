@@ -12,7 +12,7 @@ Early work. In the web demo you can select part of the app, make a wish, watch C
 
 ```ts
 // vite.config.ts
-import programmable from "@wish-ui/vite-plugin";
+import programmable from "@wishkit/vite-plugin";
 
 export default defineConfig({
   plugins: [react(), programmable({ root: "src/programmable" })],
@@ -21,9 +21,9 @@ export default defineConfig({
 
 ```tsx
 // wish.ts
-import { createBrowserClient, createClaudeWisher } from "@wish-ui/llm";
-import { createProgrammable, localApiKeyStore } from "@wish-ui/react";
-import files from "virtual:wish-ui/programmable";
+import { createBrowserClient, createClaudeWisher } from "@wishkit/llm";
+import { createProgrammable, localApiKeyStore } from "@wishkit/react";
+import files from "virtual:wishkit/programmable";
 
 const apiKey = localApiKeyStore();
 

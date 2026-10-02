@@ -1,5 +1,5 @@
 {
-  "name": "@wish-ui/vite-plugin",
+  "name": "@wishkit/vite-plugin",
   "version": "0.0.0",
   "private": true,
   "description": "Vite plugin that exposes the programmable folder to the Wish UI runtime.",

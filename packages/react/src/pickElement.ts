@@ -1,4 +1,4 @@
-import type { Selection } from "@wish-ui/core";
+import type { Selection } from "@wishkit/core";
 
 export type { Selection };
 

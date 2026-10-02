@@ -1,4 +1,4 @@
-import type { Overlay, ProgrammableRuntime, Selection, Wisher, WishOutcome } from "@wish-ui/core";
+import type { Overlay, ProgrammableRuntime, Selection, Wisher, WishOutcome } from "@wishkit/core";
 import { useRef, useState, type CSSProperties, type FormEvent } from "react";
 import type { ApiKeyStore } from "./apiKey";
 import { pickElement } from "./pickElement";

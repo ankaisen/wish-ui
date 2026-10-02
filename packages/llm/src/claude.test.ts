@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { BuildResult, Overlay, Workspace } from "@wish-ui/core";
+import type { BuildResult, Overlay, Workspace } from "@wishkit/core";
 import { describe, expect, it } from "vitest";
 import { createClaudeWisher } from "./claude";
 

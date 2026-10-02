@@ -5,7 +5,7 @@ export type ProgrammableOptions = {
   root?: string;
 };
 
-export const VIRTUAL_ID = "virtual:wish-ui/programmable";
+export const VIRTUAL_ID = "virtual:wishkit/programmable";
 const RESOLVED_ID = "\0" + VIRTUAL_ID;
 
 export function normalizeRoot(root: string): string {
@@ -28,7 +28,7 @@ export function virtualModuleCode(root: string): string {
 export default function programmable(options: ProgrammableOptions = {}): Plugin {
   const root = options.root ?? "src/programmable";
   return {
-    name: "wish-ui:programmable",
+    name: "wishkit:programmable",
     resolveId(id) {
       return id === VIRTUAL_ID ? RESOLVED_ID : undefined;
     },

@@ -5,7 +5,7 @@ import {
   type ProgrammableFiles,
   type ProgrammableRuntime,
   type Wisher,
-} from "@wish-ui/core";
+} from "@wishkit/core";
 import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 import * as React from "react";
 import { Component, useEffect, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
@@ -14,7 +14,7 @@ import type { ApiKeyStore } from "./apiKey";
 import { Panel as WishPanel } from "./Panel";
 
 export type ProgrammableOptions = {
-  /** The programmable folder, usually `import files from "virtual:wish-ui/programmable"`. */
+  /** The programmable folder, usually `import files from "virtual:wishkit/programmable"`. */
   files: ProgrammableFiles;
   /** The file whose default export `<Root />` renders. Defaults to "index.tsx". */
   entry?: string;
@@ -23,7 +23,7 @@ export type ProgrammableOptions = {
   /** Extra packages programmable code may import, by specifier. React is always included. */
   packages?: Record<string, unknown>;
   compiler?: Compiler;
-  /** Turns wishes into changes, e.g. createClaudeWisher() from @wish-ui/llm. */
+  /** Turns wishes into changes, e.g. createClaudeWisher() from @wishkit/llm. */
   wisher?: Wisher;
   /** When given, the panel asks the user for an API key and keeps it here. */
   apiKey?: ApiKeyStore;

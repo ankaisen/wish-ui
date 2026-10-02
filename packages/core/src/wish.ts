@@ -38,5 +38,5 @@ export type WishOutcome =
   | { status: "declined"; reason: string }
   | { status: "failed"; error: string };
 
-/** Turns a wish into a change. @wish-ui/llm provides one backed by Claude. */
+/** Turns a wish into a change. @wishkit/llm provides one backed by Claude. */
 export type Wisher = (request: WishRequest) => Promise<WishOutcome>;

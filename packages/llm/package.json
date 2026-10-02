@@ -1,5 +1,5 @@
 {
-  "name": "@wish-ui/llm",
+  "name": "@wishkit/llm",
   "version": "0.0.0",
   "private": true,
   "description": "Turns wishes into changes to the programmable folder, using Claude.",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
-    "@wish-ui/core": "workspace:*"
+    "@wishkit/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

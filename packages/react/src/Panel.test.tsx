@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createEsbuildCompiler, type Wisher } from "@wish-ui/core";
+import { createEsbuildCompiler, type Wisher } from "@wishkit/core";
 import { afterEach, expect, it } from "vitest";
 import type { ApiKeyStore } from "./apiKey";
 import { createProgrammable } from "./createProgrammable";

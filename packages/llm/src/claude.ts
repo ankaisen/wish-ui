@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Overlay, Wisher, WishOutcome } from "@wish-ui/core";
+import type { Overlay, Wisher, WishOutcome } from "@wishkit/core";
 import { describeRequest, SYSTEM_PROMPT } from "./prompt";
 
 export type ClaudeWisherOptions = {

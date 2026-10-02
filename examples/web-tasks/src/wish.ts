@@ -1,6 +1,6 @@
-import { createBrowserClient, createClaudeWisher } from "@wish-ui/llm";
-import { createProgrammable, localApiKeyStore } from "@wish-ui/react";
-import files from "virtual:wish-ui/programmable";
+import { createBrowserClient, createClaudeWisher } from "@wishkit/llm";
+import { createProgrammable, localApiKeyStore } from "@wishkit/react";
+import files from "virtual:wishkit/programmable";
 
 // The demo runs without a server, so each user brings their own Claude API key.
 const apiKey = localApiKeyStore();
