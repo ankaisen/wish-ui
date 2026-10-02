@@ -6,7 +6,7 @@ The developer decides what can change: one folder of the app is marked programma
 
 ## Status
 
-Early work. In the web demo you can select part of the app, make a wish, and watch Claude change the programmable folder live. Wishes are saved in the browser and come back on reload. Each one can be turned off and on again, and a wish made before the app itself changed is paused until you make it again. There is no Electron demo yet.
+Early work. In the web demo you can select part of the app, make a wish, and watch Claude change the programmable folder live. Wishes are saved in the browser and come back on reload. Each one can be turned off and on again, and a wish made before the app itself changed is paused until you make it again. The Electron demo does the same in a desktop app, with the API key kept out of the page.
 
 ## Using it
 
@@ -54,6 +54,7 @@ Files in the programmable folder may import each other, `./capabilities` (the de
 | `packages/llm` | Turns a wish into file changes with Claude, retrying when a change fails to build or render |
 | `packages/vite-plugin` | Exposes the programmable folder's sources and modules to the runtime |
 | `examples/web-tasks` | Web demo: a task dashboard whose task list lives in `src/programmable` |
+| `examples/electron-tasks` | Electron demo: the same dashboard as a desktop app, with Node off in the page and the API key in the main process |
 
 ## Running the demo
 
@@ -62,6 +63,7 @@ Requires Node 22.22.2+, 24.15+ or 26+, and pnpm 10.
 ```sh
 pnpm install
 pnpm dev        # starts the web demo at http://localhost:5173
+pnpm dev:electron   # builds and opens the Electron demo
 pnpm test       # unit tests
 pnpm typecheck
 pnpm build
