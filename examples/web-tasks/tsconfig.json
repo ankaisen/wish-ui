@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["vite/client"]
+    "types": ["vite/client", "@wish-ui/vite-plugin/client"]
   },
   "include": ["src", "vite.config.ts"]
 }

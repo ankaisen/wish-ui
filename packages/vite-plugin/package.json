@@ -1,0 +1,25 @@
+{
+  "name": "@wish-ui/vite-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vite plugin that exposes the programmable folder to the Wish UI runtime.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "vite": ">=8"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -10,6 +10,9 @@ importers:
 
   examples/web-tasks:
     dependencies:
+      '@wish-ui/react':
+        specifier: workspace:*
+        version: link:../../packages/react
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -29,9 +32,71 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.2)
+      '@wish-ui/vite-plugin':
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin
       jsdom:
         specifier: ^30.1.1
         version: 30.1.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(jsdom@30.1.1)(vite@8.3.2)
+
+  packages/core:
+    dependencies:
+      esbuild-wasm:
+        specifier: ^0.28.2
+        version: 0.28.2
+    devDependencies:
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(jsdom@30.1.1)(vite@8.3.2)
+
+  packages/react:
+    dependencies:
+      '@wish-ui/core':
+        specifier: workspace:*
+        version: link:../core
+      esbuild-wasm:
+        specifier: ^0.28.2
+        version: 0.28.2
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      jsdom:
+        specifier: ^30.1.1
+        version: 30.1.1
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(jsdom@30.1.1)(vite@8.3.2)
+
+  packages/vite-plugin:
+    devDependencies:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -461,6 +526,11 @@ packages:
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
+
+  esbuild-wasm@0.28.2:
+    resolution: {integrity: sha512-GccVwhv3mmOUVQHCQm2Ox/rby8n/EqUwvZxE6Pjfikrq/lWw9g9WX/u9EykWnpot3Ko6j426DgQdea2xWKIAQA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
@@ -1076,6 +1146,8 @@ snapshots:
   entities@8.1.0: {}
 
   es-module-lexer@2.3.2: {}
+
+  esbuild-wasm@0.28.2: {}
 
   estree-walker@3.0.3:
     dependencies:
