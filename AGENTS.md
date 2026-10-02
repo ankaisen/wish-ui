@@ -28,7 +28,7 @@ Read [docs/philosophy.md](docs/philosophy.md) and [docs/principles.md](docs/prin
 
 ## Commands
 
-Requires Node 22+ and pnpm 10. Run from the repository root:
+Requires Node 22.22.2+, 24.15+ or 26+, and pnpm 10. Run from the repository root:
 
 ```sh
 pnpm install
