@@ -127,3 +127,14 @@ describe("programmable runtime", () => {
     expect(result).toEqual({ ok: false, errors: ["Error while loading: boom"] });
   });
 });
+
+describe("prepare", () => {
+  it("switches to source-mapped modules once", async () => {
+    const runtime = createRuntime();
+    expect(await runtime.prepare()).toEqual({ ok: true });
+    expect(runtime.getSnapshot().version).toBe(1);
+    expect(render(runtime).props["data-source-file"]).toBe("Label.tsx");
+    await runtime.prepare();
+    expect(runtime.getSnapshot().version).toBe(1);
+  });
+});

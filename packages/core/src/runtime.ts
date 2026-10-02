@@ -136,9 +136,31 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     }
   }
 
+  /** Builds the overlay and, if it passes, swaps it in. The previous version stays on failure. */
+  async function apply(overlay: Overlay): Promise<BuildResult> {
+    const result = await build(overlay);
+    if (!result.ok) return result;
+    snapshot = { overlay, entry: result.entry, version: snapshot.version + 1 };
+    listeners.forEach((listener) => listener());
+    return { ok: true };
+  }
+
+  let prepared: Promise<BuildResult> | undefined;
+
   return {
     entry,
     getSnapshot: () => snapshot,
+    /**
+     * Switches from the bundled modules to ones compiled from source, which carry
+     * data-source-file/line on every DOM element. Done once, before the first selection.
+     */
+    prepare(): Promise<BuildResult> {
+      prepared ??= snapshot.version > 0 ? Promise.resolve({ ok: true }) : apply(snapshot.overlay);
+      return prepared.then((result) => {
+        if (!result.ok) prepared = undefined;
+        return result;
+      });
+    },
     subscribe(listener: () => void) {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -147,14 +169,7 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     readFile: (path: string): string | undefined => snapshot.overlay[path] ?? files.sources[path],
     listFiles: (): string[] => Object.keys({ ...files.sources, ...snapshot.overlay }).sort(),
     isLocked: (path: string) => locked.has(path),
-    /** Builds the overlay and, if it passes, swaps it in. The previous version stays on failure. */
-    async apply(overlay: Overlay): Promise<BuildResult> {
-      const result = await build(overlay);
-      if (!result.ok) return result;
-      snapshot = { overlay, entry: result.entry, version: snapshot.version + 1 };
-      listeners.forEach((listener) => listener());
-      return { ok: true };
-    },
+    apply,
   };
 }
 

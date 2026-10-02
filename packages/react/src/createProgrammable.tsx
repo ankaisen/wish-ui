@@ -9,6 +9,7 @@ import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 import * as React from "react";
 import { Component, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
+import { Panel as WishPanel } from "./Panel";
 
 export type ProgrammableOptions = {
   /** The programmable folder, usually `import files from "virtual:wish-ui/programmable"`. */
@@ -57,11 +58,18 @@ export function createProgrammable(options: ProgrammableOptions) {
     const snapshot = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot);
     const Entry = snapshot.entry as ComponentType<Record<string, unknown>>;
     return (
-      <RenderBoundary key={snapshot.version}>
-        <Entry {...props} />
-      </RenderBoundary>
+      <div data-wish-root="" style={{ display: "contents" }}>
+        <RenderBoundary key={snapshot.version}>
+          <Entry {...props} />
+        </RenderBoundary>
+      </div>
     );
   }
 
-  return { runtime, Root };
+  /** The floating panel where users select part of the app and make wishes. */
+  function Panel() {
+    return <WishPanel runtime={runtime} />;
+  }
+
+  return { runtime, Root, Panel };
 }

@@ -17,6 +17,7 @@ export function App() {
       </aside>
       <main className="content">
         <wish.Root />
+        <wish.Panel />
       </main>
     </div>
   );
