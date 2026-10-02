@@ -1,0 +1,16 @@
+{
+  "name": "wish-ui",
+  "private": true,
+  "description": "Let end users reshape your app by making wishes.",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web-tasks dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
