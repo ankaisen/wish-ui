@@ -1,38 +1,12 @@
-import {
-  createEsbuildCompiler,
-  createProgrammableRuntime,
-  createWishList,
-  type Compiler,
-  type ProgrammableFiles,
-  type ProgrammableRuntime,
-  type Wisher,
-  type WishStore,
-} from "@wishkit/core";
+import { createEsbuildCompiler } from "@wishkit/core";
+import { createWishkit, ROOT_ATTRIBUTE, type ProgrammableOptions } from "@wishkit/dom";
 import wasmURL from "esbuild-wasm/esbuild.wasm?url";
 import * as React from "react";
-import { Component, useEffect, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+import { Component, useEffect, useRef, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
-import type { ApiKeyStore } from "./apiKey";
-import { Panel as WishPanel } from "./Panel";
-import { localWishStore } from "./wishStore";
+import { react, sourceMappedJsx } from "./framework";
 
-export type ProgrammableOptions = {
-  /** The programmable folder, usually `import files from "virtual:wishkit/programmable"`. */
-  files: ProgrammableFiles;
-  /** The file whose default export `<Root />` renders. Defaults to "index.tsx". */
-  entry?: string;
-  /** Files wishes may import but never change. Defaults to ["capabilities.ts"]. */
-  locked?: string[];
-  /** Extra packages programmable code may import, by specifier. React is always included. */
-  packages?: Record<string, unknown>;
-  compiler?: Compiler;
-  /** Turns wishes into changes, e.g. createClaudeWisher() from @wishkit/llm. */
-  wisher?: Wisher;
-  /** When given, the panel asks the user for an API key and keeps it here. */
-  apiKey?: ApiKeyStore;
-  /** Where the user's wishes are kept. Defaults to this browser's localStorage. */
-  store?: WishStore;
-};
+export type { ProgrammableOptions };
 
 type BoundaryProps = { children: ReactNode; onError?: (error: Error) => void };
 
@@ -56,19 +30,12 @@ class RenderBoundary extends Component<BoundaryProps, { error: Error | null }> {
 }
 
 export function createProgrammable(options: ProgrammableOptions) {
-  const runtime: ProgrammableRuntime = createProgrammableRuntime({
-    files: options.files,
-    entry: options.entry ?? "index.tsx",
-    locked: options.locked ?? ["capabilities.ts"],
-    packages: { react: React, "react/jsx-runtime": jsxRuntime, ...options.packages },
-    compiler: options.compiler ?? createEsbuildCompiler({ wasmURL }),
-  });
-
-  const wishes = createWishList({
-    store: options.store ?? localWishStore(),
-    sources: options.files.sources,
-    apply: (overlay) => runtime.tryApply(overlay),
-    current: () => runtime.getSnapshot().overlay,
+  const { runtime, wishes, mountPanel } = createWishkit(options, {
+    framework: react,
+    entry: "index.tsx",
+    packages: { react: React, "react/jsx-runtime": jsxRuntime },
+    internal: { "react/jsx-dev-runtime": sourceMappedJsx(jsxRuntime) },
+    compiler: createEsbuildCompiler({ wasmURL }),
   });
 
   /** Tells the runtime a version rendered, so tryApply() can keep it. */
@@ -86,7 +53,7 @@ export function createProgrammable(options: ProgrammableOptions) {
       void wishes.ready();
     }, []);
     return (
-      <div data-wish-root="" style={{ display: "contents" }}>
+      <div {...{ [ROOT_ATTRIBUTE]: "" }} style={{ display: "contents" }}>
         <RenderBoundary key={snapshot.version} onError={(error) => runtime.reportRender(snapshot.version, error)}>
           <Entry {...props} />
           <Rendered version={snapshot.version} />
@@ -97,7 +64,9 @@ export function createProgrammable(options: ProgrammableOptions) {
 
   /** The floating panel where users select part of the app and make wishes. */
   function Panel() {
-    return <WishPanel runtime={runtime} wishes={wishes} wisher={options.wisher} apiKey={options.apiKey} />;
+    const host = useRef<HTMLDivElement>(null);
+    useEffect(() => mountPanel(host.current!), []);
+    return <div ref={host} style={{ display: "contents" }} />;
   }
 
   return { runtime, wishes, Root, Panel };

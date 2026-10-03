@@ -1,2 +1,2 @@
 export { createBrowserClient, createClaudeWisher, type ClaudeWisherOptions } from "./claude";
-export { describeRequest, SYSTEM_PROMPT } from "./prompt";
+export { describeRequest, systemPrompt } from "./prompt";

@@ -1,8 +1,8 @@
 import type { Selection } from "@wishkit/core";
 
-export type { Selection };
-
-const ROOT_SELECTOR = "[data-wish-root]";
+/** Marks the element each adapter renders the programmable entry into. Only elements inside one can be picked. */
+export const ROOT_ATTRIBUTE = "data-wish-root";
+const ROOT_SELECTOR = `[${ROOT_ATTRIBUTE}]`;
 
 export function selectionFor(target: EventTarget | null): { element: HTMLElement; selection: Selection } | null {
   if (!(target instanceof Element)) return null;

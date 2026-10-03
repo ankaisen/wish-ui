@@ -1,3 +1,4 @@
+import type { Framework } from "./framework";
 import type { BuildResult, Overlay } from "./runtime";
 
 /** What the user pointed at: the element and the source line that created it. */
@@ -12,6 +13,8 @@ export type Selection = {
 
 /** The programmable folder as a wisher sees it. A ProgrammableRuntime satisfies this. */
 export type Workspace = {
+  /** The UI framework the files are written for. */
+  framework: Framework;
   listFiles(): string[];
   readFile(path: string): string | undefined;
   isLocked(path: string): boolean;

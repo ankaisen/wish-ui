@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Overlay, Wisher, WishOutcome } from "@wishkit/core";
-import { describeRequest, SYSTEM_PROMPT } from "./prompt";
+import { hasExtension, type Framework, type Overlay, type Wisher, type WishOutcome } from "@wishkit/core";
+import { describeRequest, systemPrompt } from "./prompt";
 
 export type ClaudeWisherOptions = {
   /** A client, or a function returning one (e.g. once the user has entered a key). */
@@ -15,48 +15,55 @@ export type ClaudeWisherOptions = {
   maxTurns?: number;
 };
 
-const TOOLS: Anthropic.Beta.BetaTool[] = [
-  {
-    name: "read_file",
-    description: "Read a file in the programmable folder. Returns its current source.",
-    strict: true,
-    input_schema: {
-      type: "object",
-      properties: { path: { type: "string", description: 'Path relative to the folder, e.g. "TaskList.tsx".' } },
-      required: ["path"],
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "write_file",
-    description:
-      "Create or replace a file in the programmable folder with its complete new source. Changes go live together when you finish.",
-    strict: true,
-    input_schema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: 'Path relative to the folder, ending in .ts or .tsx, e.g. "TaskList.tsx".' },
-        content: { type: "string", description: "The file's complete source." },
+function toolsFor(framework: Framework): Anthropic.Beta.BetaTool[] {
+  const example = `"TaskList${framework.extensions[0] ?? ".ts"}"`;
+  return [
+    {
+      name: "read_file",
+      description: "Read a file in the programmable folder. Returns its current source.",
+      strict: true,
+      input_schema: {
+        type: "object",
+        properties: { path: { type: "string", description: `Path relative to the folder, e.g. ${example}.` } },
+        required: ["path"],
+        additionalProperties: false,
       },
-      required: ["path", "content"],
-      additionalProperties: false,
     },
-  },
-  {
-    name: "decline",
-    description:
-      "Say the wish can't be done inside the app's boundary. The reason is shown to the user, so say what is missing in plain words.",
-    strict: true,
-    input_schema: {
-      type: "object",
-      properties: { reason: { type: "string" } },
-      required: ["reason"],
-      additionalProperties: false,
+    {
+      name: "write_file",
+      description:
+        "Create or replace a file in the programmable folder with its complete new source. Changes go live together when you finish.",
+      strict: true,
+      input_schema: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: `Path relative to the folder, ending in ${framework.extensions.join(" or ")}, e.g. ${example}.`,
+          },
+          content: { type: "string", description: "The file's complete source." },
+        },
+        required: ["path", "content"],
+        additionalProperties: false,
+      },
     },
-  },
-];
+    {
+      name: "decline",
+      description:
+        "Say the wish can't be done inside the app's boundary. The reason is shown to the user, so say what is missing in plain words.",
+      strict: true,
+      input_schema: {
+        type: "object",
+        properties: { reason: { type: "string" } },
+        required: ["reason"],
+        additionalProperties: false,
+      },
+    },
+  ];
+}
 
-const PATH_PATTERN = /^(?!.*(?:^|\/)\.\.?(?:\/|$))[\w.-]+(?:\/[\w.-]+)*\.tsx?$/;
+/** A relative path inside the folder: no "." or ".." segments, no leading slash. */
+const PATH_PATTERN = /^(?!.*(?:^|\/)\.\.?(?:\/|$))[\w.-]+(?:\/[\w.-]+)*$/;
 
 function textOf(content: Anthropic.Beta.BetaContentBlock[]): string {
   return content
@@ -82,6 +89,9 @@ export function createClaudeWisher(options: ClaudeWisherOptions): Wisher {
 
   return async ({ text, selection, workspace, onProgress, signal }): Promise<WishOutcome> => {
     const client = typeof options.client === "function" ? options.client() : options.client;
+    const { framework } = workspace;
+    const system = systemPrompt(framework);
+    const tools = toolsFor(framework);
     const messages: Anthropic.Beta.BetaMessageParam[] = [
       { role: "user", content: describeRequest(text, selection, workspace) },
     ];
@@ -96,8 +106,8 @@ export function createClaudeWisher(options: ClaudeWisherOptions): Wisher {
           {
             model,
             max_tokens: 16000,
-            system: SYSTEM_PROMPT,
-            tools: TOOLS,
+            system,
+            tools,
             messages,
             output_config: { effort: options.effort ?? "medium" },
             // On a safety decline, the API retries on a suitable fallback model in the same call.
@@ -140,8 +150,13 @@ export function createClaudeWisher(options: ClaudeWisherOptions): Wisher {
             );
           } else if (use.name === "write_file") {
             const path = input.path ?? "";
-            if (!PATH_PATTERN.test(path)) {
-              results.push({ type: "tool_result", tool_use_id: use.id, is_error: true, content: `Invalid path "${path}". Use a .ts or .tsx path inside the folder.` });
+            if (!PATH_PATTERN.test(path) || !hasExtension(framework, path)) {
+              results.push({
+                type: "tool_result",
+                tool_use_id: use.id,
+                is_error: true,
+                content: `Invalid path "${path}". Use a ${framework.extensions.join(" or ")} path inside the folder.`,
+              });
             } else if (workspace.isLocked(path)) {
               results.push({ type: "tool_result", tool_use_id: use.id, is_error: true, content: `${path} is locked and cannot be changed.` });
             } else {
