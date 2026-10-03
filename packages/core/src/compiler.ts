@@ -20,11 +20,15 @@ let initialized: Promise<void> | undefined;
 // esbuild-wasm runs its Node build under Node (tests, jsdom), where a wasmURL is rejected.
 const inNode = Boolean((globalThis as { process?: { versions?: { node?: string } } }).process?.versions?.node);
 
-/**
- * esbuild-wasm compiles in the browser (and in Node for tests). In the browser pass the
- * URL of `esbuild-wasm/esbuild.wasm`; in Node leave it out.
- */
-export function createEsbuildCompiler(options: { wasmURL?: string | URL } = {}): Compiler {
+export type EsbuildCompilerOptions = {
+  /** The URL of `esbuild-wasm/esbuild.wasm`. Needed in the browser; leave it out in Node. */
+  wasmURL?: string | URL;
+  /** TypeScript options esbuild should follow, e.g. legacy decorators for Angular. */
+  tsconfig?: { experimentalDecorators?: boolean; useDefineForClassFields?: boolean };
+};
+
+/** esbuild-wasm compiles TypeScript and TSX in the browser (and in Node for tests). */
+export function createEsbuildCompiler(options: EsbuildCompilerOptions = {}): Compiler {
   return {
     async compile(path, source) {
       initialized ??= esbuild.initialize(
@@ -40,6 +44,7 @@ export function createEsbuildCompiler(options: { wasmURL?: string | URL } = {}):
           jsxDev: true,
           sourcefile: path,
           target: "es2022",
+          ...(options.tsconfig && { tsconfigRaw: { compilerOptions: options.tsconfig } }),
         });
         return result.code;
       } catch (error) {
