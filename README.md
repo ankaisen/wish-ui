@@ -49,8 +49,9 @@ Files in the programmable folder may import each other, `./capabilities` (the de
 
 | Path | Holds |
 | --- | --- |
-| `packages/core` | Runtime: compiles a user's changed files in the browser with esbuild-wasm, checks imports, swaps them in |
-| `packages/react` | `createProgrammable`, `<Root />`, and the wish panel (selection, wish box, undo) |
+| `packages/core` | Framework-neutral runtime: compiles a user's changed files in the browser with esbuild-wasm, checks imports, swaps them in, and keeps the saved wishes |
+| `packages/dom` | The wish panel (selection, wish box, undo) and browser storage, in plain DOM so every framework shares them |
+| `packages/react` | `createProgrammable` and `<Root />` for React apps |
 | `packages/llm` | Turns a wish into file changes with Claude, retrying when a change fails to build or render |
 | `packages/vite-plugin` | Exposes the programmable folder's sources and modules to the runtime |
 | `examples/web-tasks` | Web demo: a task dashboard whose task list lives in `src/programmable` |

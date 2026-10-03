@@ -1,4 +1,5 @@
 import { CompileError, type Compiler } from "./compiler";
+import { hasExtension, type Framework } from "./framework";
 import { isRelative, resolveFile } from "./paths";
 
 /** The programmable folder as the host app was built: raw sources plus the bundled modules. */
@@ -18,8 +19,16 @@ export type RuntimeOptions = {
   entry: string;
   /** Files a wish may import but never change, e.g. the capabilities module. */
   locked: string[];
-  /** Packages programmable code may import, by specifier. Must include "react/jsx-runtime". */
+  /** The UI framework the files are written for. */
+  framework: Framework;
+  /** Packages programmable code may import, by specifier, e.g. { react: React }. Listed to the wisher. */
   packages: Record<string, unknown>;
+  /**
+   * Modules compiled code may import that wishes aren't offered, by specifier: what the
+   * compiler's output refers to, such as a JSX runtime that adds data-source-* attributes.
+   */
+  internal?: Record<string, unknown>;
+  /** Turns one source file into a CommonJS module body. */
   compiler: Compiler;
 };
 
@@ -33,42 +42,16 @@ type Snapshot = {
   version: number;
 };
 
-const JSX_DEV_RUNTIME = "react/jsx-dev-runtime";
-
-type JsxRuntime = { jsx: Function; jsxs: Function; Fragment: unknown };
-
 const IMPORT_PATTERN = /\brequire\(\s*["']([^"']+)["']\s*\)/g;
 
 export function findImports(compiled: string): string[] {
   return [...compiled.matchAll(IMPORT_PATTERN)].map((match) => match[1]!);
 }
 
-/** Wraps jsx() so every DOM element carries the file and line that created it. */
-function sourceMappedJsx(jsxRuntime: JsxRuntime) {
-  return {
-    Fragment: jsxRuntime.Fragment,
-    jsxDEV(
-      type: unknown,
-      props: Record<string, unknown>,
-      key: unknown,
-      isStaticChildren: boolean,
-      source?: { fileName: string; lineNumber: number },
-    ) {
-      if (typeof type === "string" && source) {
-        props = { ...props, "data-source-file": source.fileName, "data-source-line": source.lineNumber };
-      }
-      // jsxs marks children written inline (not from a .map), so React doesn't ask them for keys.
-      return (isStaticChildren ? jsxRuntime.jsxs : jsxRuntime.jsx)(type, props, key);
-    },
-  };
-}
-
 export function createProgrammableRuntime(options: RuntimeOptions) {
-  const { files, entry, compiler } = options;
+  const { files, entry, framework, compiler } = options;
   const locked = new Set(options.locked);
-  const jsxRuntime = options.packages["react/jsx-runtime"] as JsxRuntime | undefined;
-  if (!jsxRuntime) throw new Error('packages must include "react/jsx-runtime"');
-  const packages: Record<string, unknown> = { ...options.packages, [JSX_DEV_RUNTIME]: sourceMappedJsx(jsxRuntime) };
+  const packages: Record<string, unknown> = { ...options.internal, ...options.packages };
 
   const bundledEntry = (files.modules[entry] as { default?: unknown } | undefined)?.default;
   if (bundledEntry === undefined) throw new Error(`${entry} has no default export`);
@@ -81,6 +64,9 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     const errors: string[] = [];
     for (const path of Object.keys(overlay)) {
       if (locked.has(path)) errors.push(`${path}: this file is locked and cannot be changed`);
+      else if (!hasExtension(framework, path)) {
+        errors.push(`${path}: only ${framework.extensions.join(", ")} files can be added to the programmable folder`);
+      }
     }
     if (errors.length) return { ok: false, errors };
 
@@ -183,6 +169,7 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
 
   return {
     entry,
+    framework,
     getSnapshot: () => snapshot,
     /**
      * Switches from the bundled modules to ones compiled from source, which carry
@@ -204,8 +191,7 @@ export function createProgrammableRuntime(options: RuntimeOptions) {
     listFiles: (): string[] => Object.keys({ ...files.sources, ...snapshot.overlay }).sort(),
     isLocked: (path: string) => locked.has(path),
     /** Package specifiers programmable code may import. */
-    listPackages: (): string[] =>
-      Object.keys(options.packages).filter((name) => !name.startsWith("react/jsx-")).sort(),
+    listPackages: (): string[] => Object.keys(options.packages).sort(),
     apply,
     tryApply,
     reportRender,

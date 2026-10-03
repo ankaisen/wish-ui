@@ -14,11 +14,11 @@ const tool = (name: string, input: Record<string, string>) => ({ type: "tool_use
 
 /** A fake client that returns scripted responses and records each request. */
 function fakeClient(...responses: ReturnType<typeof reply>[]) {
-  const requests: { messages: { role: string; content: unknown }[] }[] = [];
+  const requests: { system: string; messages: { role: string; content: unknown }[] }[] = [];
   const client = {
     beta: {
       messages: {
-        async create(params: { messages: { role: string; content: unknown }[] }) {
+        async create(params: { system: string; messages: { role: string; content: unknown }[] }) {
           requests.push(structuredClone(params));
           const next = responses.shift();
           if (!next) throw new Error("no scripted response left");
@@ -37,6 +37,7 @@ function fakeWorkspace(results: BuildResult[] = [{ ok: true }]) {
     "capabilities.ts": "export const tasks = {};",
   };
   const workspace: Workspace = {
+    framework: { name: "React", extensions: [".tsx", ".ts"], guidance: "- The entry's default export is a React component." },
     listFiles: () => Object.keys(files).sort(),
     readFile: (path) => files[path],
     isLocked: (path) => path === "capabilities.ts",
@@ -75,6 +76,8 @@ describe("Claude wisher", () => {
     expect(first).toContain("selected a <p> rendered at index.tsx:1");
     expect(first).toContain("- capabilities.ts (locked)");
     expect(first).toContain('<file path="index.tsx">');
+    expect(requests[0]!.system).toContain("You change a running React app");
+    expect(requests[0]!.system).toContain("- The entry's default export is a React component.");
   });
 
   it("sends failed checks back and applies the fixed version", async () => {
@@ -119,6 +122,7 @@ describe("Claude wisher", () => {
         "tool_use",
         tool("write_file", { path: "capabilities.ts", content: "x" }),
         tool("write_file", { path: "../store.ts", content: "x" }),
+        tool("write_file", { path: "Label.vue", content: "x" }),
       ),
       reply("end_turn", text("Gave up")),
     );
@@ -127,7 +131,8 @@ describe("Claude wisher", () => {
     const results = requests[1]!.messages.at(-1)!.content as { is_error: boolean; content: string }[];
     expect(results.map((result) => [result.is_error, result.content])).toEqual([
       [true, "capabilities.ts is locked and cannot be changed."],
-      [true, 'Invalid path "../store.ts". Use a .ts or .tsx path inside the folder.'],
+      [true, 'Invalid path "../store.ts". Use a .tsx or .ts path inside the folder.'],
+      [true, 'Invalid path "Label.vue". Use a .tsx or .ts path inside the folder.'],
     ]);
     expect(outcome).toEqual({ status: "failed", error: "Gave up" });
   });

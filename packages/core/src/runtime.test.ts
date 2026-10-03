@@ -1,14 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { createEsbuildCompiler } from "./compiler";
+import type { Framework } from "./framework";
 import { createProgrammableRuntime, type ProgrammableFiles } from "./runtime";
 
-type Element = { type: unknown; props: Record<string, unknown> };
+type Element = { type: unknown; props: Record<string, unknown>; line?: number };
 
-const jsxRuntime = {
+/** What esbuild's JSX output imports. Frameworks pass their own, e.g. one that tags DOM elements. */
+const jsxDevRuntime = {
   Fragment: Symbol("Fragment"),
-  jsx: (type: unknown, props: Record<string, unknown>): Element => ({ type, props }),
-  jsxs: (type: unknown, props: Record<string, unknown>): Element => ({ type, props }),
+  jsxDEV: (type: unknown, props: Record<string, unknown>, _key: unknown, _static: boolean, source?: { lineNumber: number }): Element => ({
+    type,
+    props,
+    line: source?.lineNumber,
+  }),
 };
+
+const framework: Framework = { name: "Test", extensions: [".tsx", ".ts"], guidance: "" };
 
 const capabilities = { greeting: () => "hello" };
 
@@ -32,7 +39,9 @@ function createRuntime() {
     files,
     entry: "index.tsx",
     locked: ["capabilities.ts"],
-    packages: { "react/jsx-runtime": jsxRuntime },
+    framework,
+    packages: {},
+    internal: { "react/jsx-dev-runtime": jsxDevRuntime },
     compiler,
   });
 }
@@ -68,10 +77,10 @@ describe("programmable runtime", () => {
     expect(runtime.readFile("Label.tsx")).toContain("toUpperCase");
   });
 
-  it("tags DOM elements with their source file and line", async () => {
+  it("gives compiled code the internal modules, such as the JSX runtime", async () => {
     const runtime = createRuntime();
     await runtime.apply({});
-    expect(render(runtime).props).toMatchObject({ "data-source-file": "Label.tsx", "data-source-line": 2 });
+    expect(render(runtime)).toMatchObject({ type: "span", line: 2 });
   });
 
   it("shares the host's capabilities module instead of recompiling it", async () => {
@@ -80,7 +89,9 @@ describe("programmable runtime", () => {
       files: { ...files, modules: { ...files.modules, "capabilities.ts": shared } },
       entry: "index.tsx",
       locked: ["capabilities.ts"],
-      packages: { "react/jsx-runtime": jsxRuntime },
+      framework,
+      packages: {},
+      internal: { "react/jsx-dev-runtime": jsxDevRuntime },
       compiler,
     });
     await runtime.apply({});
@@ -104,6 +115,11 @@ describe("programmable runtime", () => {
       "Label.tsx": 'import fs from "node:fs";\nexport function Label() { return <span>{String(fs)}</span>; }\n',
     });
     expect(result).toEqual({ ok: false, errors: ['Label.tsx: "node:fs" is not an approved package'] });
+  });
+
+  it("refuses files of a type the framework doesn't use", async () => {
+    const result = await createRuntime().apply({ "Label.vue": "<template><b /></template>" });
+    expect(result).toEqual({ ok: false, errors: ["Label.vue: only .tsx, .ts files can be added to the programmable folder"] });
   });
 
   it("refuses to change a locked file", async () => {
@@ -133,7 +149,7 @@ describe("prepare", () => {
     const runtime = createRuntime();
     expect(await runtime.prepare()).toEqual({ ok: true });
     expect(runtime.getSnapshot().version).toBe(1);
-    expect(render(runtime).props["data-source-file"]).toBe("Label.tsx");
+    expect(render(runtime).line).toBe(2);
     await runtime.prepare();
     expect(runtime.getSnapshot().version).toBe(1);
   });
@@ -165,7 +181,16 @@ describe("tryApply", () => {
     expect(await runtime.tryApply({}, { renderTimeoutMs: 10 })).toEqual({ ok: true });
   });
 
-  it("lists approved packages without the JSX runtimes", () => {
-    expect(createRuntime().listPackages()).toEqual([]);
+  it("lists approved packages but not internal ones", () => {
+    const runtime = createProgrammableRuntime({
+      files,
+      entry: "index.tsx",
+      locked: ["capabilities.ts"],
+      framework,
+      packages: { react: {}, "date-fns": {} },
+      internal: { "react/jsx-dev-runtime": jsxDevRuntime },
+      compiler,
+    });
+    expect(runtime.listPackages()).toEqual(["date-fns", "react"]);
   });
 });

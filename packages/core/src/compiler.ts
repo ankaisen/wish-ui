@@ -1,7 +1,7 @@
 import * as esbuild from "esbuild-wasm";
 
 export type Compiler = {
-  /** Compiles one TypeScript/TSX file to a CommonJS module body. */
+  /** Compiles one source file to a CommonJS module body. */
   compile(path: string, source: string): Promise<string>;
 };
 
@@ -33,10 +33,10 @@ export function createEsbuildCompiler(options: { wasmURL?: string | URL } = {}):
       await initialized;
       try {
         const result = await esbuild.transform(source, {
-          loader: path.endsWith("x") ? "tsx" : "ts",
+          loader: path.endsWith(".tsx") || path.endsWith(".jsx") ? "tsx" : "ts",
           format: "cjs",
           jsx: "automatic",
-          // jsxDev passes each element's file and line, which the runtime turns into data-source-* attributes.
+          // jsxDev passes each element's file and line to the JSX runtime, which can tag DOM elements with them.
           jsxDev: true,
           sourcefile: path,
           target: "es2022",
