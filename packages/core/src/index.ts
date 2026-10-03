@@ -1,4 +1,4 @@
-export { CompileError, createEsbuildCompiler, type Compiler } from "./compiler";
+export { CompileError, createEsbuildCompiler, type Compiler, type EsbuildCompilerOptions } from "./compiler";
 export { hasExtension, type Framework } from "./framework";
 export {
   createProgrammableRuntime,

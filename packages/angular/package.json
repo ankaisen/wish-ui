@@ -1,0 +1,42 @@
+{
+  "name": "@wishkit/angular",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Angular bindings for Wishkit.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankaisen/wishkit.git",
+    "directory": "packages/angular"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wishkit/core": "workspace:*",
+    "@wishkit/dom": "workspace:*",
+    "esbuild-wasm": "^0.28.2"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=20",
+    "@angular/compiler": ">=20",
+    "@angular/core": ">=20"
+  },
+  "devDependencies": {
+    "@angular/common": "^22.2.1",
+    "@angular/compiler": "^22.2.1",
+    "@angular/core": "^22.2.1",
+    "@angular/platform-browser": "^22.2.1",
+    "@testing-library/dom": "^10.4.2",
+    "jsdom": "^30.1.1",
+    "rxjs": "^7.8.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}
