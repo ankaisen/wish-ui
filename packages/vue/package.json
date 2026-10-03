@@ -1,0 +1,36 @@
+{
+  "name": "@wishkit/vue",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vue bindings for Wishkit.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankaisen/wishkit.git",
+    "directory": "packages/vue"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wishkit/core": "workspace:*",
+    "@wishkit/dom": "workspace:*",
+    "esbuild-wasm": "^0.28.2"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "jsdom": "^30.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.43"
+  }
+}
