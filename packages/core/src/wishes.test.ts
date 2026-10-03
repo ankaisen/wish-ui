@@ -161,6 +161,13 @@ describe("wish list", () => {
     expect(list.getSnapshot().live).toEqual(new Set([remade.id]));
   });
 
+  it("restores only once however often ready() is called", async () => {
+    const { list, applied } = setup(memoryStore(make([], "badges", { "List.tsx": "list + badges" })));
+    await Promise.all([list.ready(), list.ready()]);
+    await list.ready();
+    expect(applied).toEqual([{ "List.tsx": "list + badges" }]);
+  });
+
   it("doesn't re-apply an overlay the app already runs", async () => {
     const applied: Overlay[] = [];
     const list = createWishList({

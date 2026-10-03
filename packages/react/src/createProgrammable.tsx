@@ -70,7 +70,6 @@ export function createProgrammable(options: ProgrammableOptions) {
     apply: (overlay) => runtime.tryApply(overlay),
     current: () => runtime.getSnapshot().overlay,
   });
-  let restored: Promise<unknown> | undefined;
 
   /** Tells the runtime a version rendered, so tryApply() can keep it. */
   function Rendered({ version }: { version: number }) {
@@ -84,7 +83,7 @@ export function createProgrammable(options: ProgrammableOptions) {
     const Entry = snapshot.entry as ComponentType<Record<string, unknown>>;
     // Brings back the user's saved wishes once something is mounted to render them.
     useEffect(() => {
-      restored ??= wishes.restore();
+      void wishes.ready();
     }, []);
     return (
       <div data-wish-root="" style={{ display: "contents" }}>

@@ -116,6 +116,7 @@ export function Panel({ runtime, wishes, wisher, apiKey }: PanelProps) {
     setPicking("preparing");
     try {
       // The first pick switches to modules compiled from source, which carry data-source-* attributes.
+      await wishes.ready();
       const prepared = await runtime.prepare();
       if (!prepared.ok) {
         setOutcome({ status: "failed", error: prepared.errors.join("; ") });
@@ -139,6 +140,7 @@ export function Panel({ runtime, wishes, wisher, apiKey }: PanelProps) {
     setMadeId(null);
     setProgress("Starting");
     try {
+      await wishes.ready();
       await runtime.prepare();
       const result = await wisher({ text: wishText, selection: wishSelection, workspace: runtime, onProgress: setProgress });
       if (result.status === "applied") setMadeId((await save(result)).id);

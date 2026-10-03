@@ -236,6 +236,8 @@ export function createWishList(options: WishListOptions) {
 
   store.subscribe?.(() => void restore());
 
+  let restoredOnce: Promise<WishListChange> | undefined;
+
   return {
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) {
@@ -243,6 +245,13 @@ export function createWishList(options: WishListOptions) {
       return () => listeners.delete(listener);
     },
     restore,
+    /**
+     * Restores the saved wishes the first time it is called and resolves once they are live.
+     * Anything that reads or changes the app's files waits for this first, so it never starts
+     * from the app's original files while saved wishes are still on their way back.
+     */
+    ready: (): Promise<WishListChange> =>
+      (restoredOnce ??= restore().catch((error: unknown) => ({ ok: false as const, error: String(error) }))),
     /** Saves a wish whose change is already live. It starts out turned on. */
     record(wish: { text: string; summary: string; selection: Selection | null; files: Record<string, string> }) {
       return serial(async () => {

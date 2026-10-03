@@ -121,3 +121,17 @@ it("asks for an API key before the first wish", () => {
   expect(stored).toBe("sk-ant-test");
   expect(screen.getByLabelText("Your wish")).toBeTruthy();
 });
+
+it("waits for saved wishes to come back before making a new one", async () => {
+  const bold = { "index.tsx": "export default function App() { return <p><b>bold</b></p>; }" };
+  let seen: string | undefined;
+  const reader: Wisher = async ({ workspace }) => {
+    seen = workspace.readFile("index.tsx");
+    return { status: "declined", reason: "just looking" };
+  };
+  setup(reader, undefined, memoryWishStore([saved(bold, { "index.tsx": hashSource(source) })]));
+  // Wish straight away, before the saved wish has been compiled and applied.
+  await wishFor("look at the app");
+  await waitFor(() => expect(seen).toBeDefined(), { timeout: 4000 });
+  expect(seen).toContain("<b>bold</b>");
+});
