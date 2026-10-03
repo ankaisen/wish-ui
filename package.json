@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter web-tasks dev",
+    "dev:vue": "pnpm --filter vue-tasks dev",
     "dev:electron": "pnpm --filter electron-tasks dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",

@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client", "@wishkit/vite-plugin/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}
