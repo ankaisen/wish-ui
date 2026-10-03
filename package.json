@@ -2,7 +2,7 @@
   "name": "wishkit",
   "private": true,
   "description": "Let end users reshape your app by making wishes.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
